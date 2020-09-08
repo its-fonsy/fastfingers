@@ -8,51 +8,41 @@
 
 #define KEY_ESC 27
 
-/* Color stuff */
+// color stuff
 #define RIGHT_WORD 1
 #define WRONG_WORD 2
 #define SELECT_WORD 3
 
-int typing_word_correctly(char *user, char *word_to_type);
+// variables
+uint8_t print_raw = 0;
+int x_offset;
+char *words[MAX_WORDS] = {"ciao", "prova", "test", "luce", "astronomo", "fiore", "pianeta", "inventore",
+	"capello", "capire", "capitare", "capo", "carattere", "caratteristico", "carne", "caro",
+	"carta", "casa", "caso", "cattivo", "cattolico", "causa", "cavallo", "celebrare",
+	"centrale", "centro", "cercare", "certamente", "certo", "che", "chi", "chiamare",
+	"chiaro", "chiave", "chiedere", "chiesa", "chilometro", "chissà", "chiudere", "ci"};
+
+// functions
+int init_curses();
+bool typing_word_correctly(char *user, char *word_to_type);
+void print_new_raw();
 
 int main()
 {
+	init_curses();
+
+	int cursor_x, cursor_y, n_ch = 0, index_word_to_type = 0;
+	int correct_typed_words = 0;
 	int ch;
-	char *words[N_WORDS] = {"ciao", "prova", "test", "luce", "astronomo", "fiore", "pianeta", "inventore"};
-
-	/* Initial setup */
-	initscr();
-	raw();
-	keypad(stdscr, TRUE);
-	noecho();
-
-	if(has_colors() == FALSE)
-	{	endwin();
-		printf("Your terminal does not support color\n");
-		exit(1);
-	}
-	start_color();
-	init_pair(RIGHT_WORD, COLOR_GREEN, COLOR_BLACK);
-	init_pair(WRONG_WORD, COLOR_RED, COLOR_BLACK);
-	init_pair(SELECT_WORD, COLOR_BLACK, COLOR_WHITE);
-
-	/* Print the word to type in the center of the screen */
 	size_t word_lenght = 0;
+
+	// set the x_offset
 	for (int i = 0; i < N_WORDS; i++) {
 		word_lenght += strlen(words[i]);
 	}
+	x_offset = (COLS/2) - (word_lenght + 7)/2;
 
-	int x_offset = (COLS/2) - (word_lenght + 7)/2;
-
-	word_lenght = 0;
-	for (int i = 0; i < N_WORDS; i++) {
-		mvprintw(5, x_offset + word_lenght, words[i]);
-		word_lenght += strlen(words[i]) + 1;
-	}
-
-	/* Prepare to user input */
-	int cursor_x, cursor_y, n_ch = 0, index_word_to_type = 0;
-	int correct_typed_words = 0;
+	print_new_raw();
 
 	char *user_word, *word_to_type;
 	user_word = (char*)malloc(WORD_LENGHT*sizeof(char));
@@ -66,7 +56,7 @@ int main()
 	mvprintw(5, x_offset, word_to_type);
 	attroff(COLOR_PAIR(SELECT_WORD));
 
-	move(6, (COLS/2) - 5);
+	move(7, (COLS/2) - 5);
 	while((ch = getch()) != KEY_ESC)
 	{
 		getyx(stdscr, cursor_y, cursor_x);
@@ -85,26 +75,27 @@ int main()
 				n_ch = 0;
 
 				// update the word that must be typed
-				if (index_word_to_type < N_WORDS - 1)
-					index_word_to_type++;
-				else
-					index_word_to_type = 0, word_lenght = 0;
-
-				// check if the word typed is correct
-				if(typing_word_correctly(user_word, word_to_type))
+				index_word_to_type++;
+				if (index_word_to_type == (N_WORDS * print_raw))
 				{
-					correct_typed_words++;
-					attron(COLOR_PAIR(RIGHT_WORD));
+					print_new_raw();
+					word_lenght = 0;
+				} else {
+					if (typing_word_correctly(user_word, word_to_type))
+					{
+						correct_typed_words++;
+						attron(COLOR_PAIR(RIGHT_WORD));
 
-				} else 
-					attron(COLOR_PAIR(WRONG_WORD));
+					} else 
+						attron(COLOR_PAIR(WRONG_WORD));
 
-				// mark as correct or wrong the current typed word
-				mvprintw(5, x_offset + word_lenght, word_to_type);
-				attroff(COLOR_PAIR(WRONG_WORD));
-				attroff(COLOR_PAIR(RIGHT_WORD));
+					// mark as correct or wrong the current typed word
+					mvprintw(5, x_offset + word_lenght, word_to_type);
+					attroff(COLOR_PAIR(WRONG_WORD));
+					attroff(COLOR_PAIR(RIGHT_WORD));
 
-				word_lenght += strlen(word_to_type) + 1;
+					word_lenght += strlen(word_to_type) + 1;
+				}
 				strcpy(word_to_type, words[index_word_to_type]);
 
 				// select next word to be typed
@@ -112,7 +103,7 @@ int main()
 				mvprintw(5, x_offset + word_lenght, word_to_type);
 
 				// reset the cursor
-				move(6, (COLS/2) - 5);
+				move(7, (COLS/2) - 5);
 				clrtoeol();
 
 				break;
@@ -138,10 +129,61 @@ int main()
 	return 0;
 }
 
-int typing_word_correctly(char *user, char *word_to_type){
+bool typing_word_correctly(char *user, char *word_to_type){
 	for( ; *user != '\0' ; user++, word_to_type++ ){
 		if (*user != *word_to_type)
 			return 0;
 	}
 	return 1;
+}
+
+int init_curses()
+{
+	// initial setup
+	initscr();
+	raw();
+	keypad(stdscr, TRUE);
+	noecho();
+
+	if(has_colors() == FALSE)
+	{	endwin();
+		printf("Your terminal does not support color\n");
+		exit(1);
+	}
+
+	start_color();
+	init_pair(RIGHT_WORD, COLOR_GREEN, COLOR_BLACK);
+	init_pair(WRONG_WORD, COLOR_RED, COLOR_BLACK);
+	init_pair(SELECT_WORD, COLOR_BLACK, COLOR_WHITE);
+
+	mvprintw(8, (COLS/2)-7, "-----------------");
+	// ──────────────
+	return 1;
+}
+
+void print_new_raw()
+{
+	size_t word_lenght = 0;
+	int i;
+
+	attroff(COLOR_PAIR(WRONG_WORD));
+	attroff(COLOR_PAIR(RIGHT_WORD));
+
+	move(5,0);
+	clrtoeol();
+	for (i = N_WORDS * print_raw; i < N_WORDS + N_WORDS * print_raw; i++) {
+		mvprintw(5, x_offset + word_lenght, words[i]);
+		word_lenght += strlen(words[i]) + 1;
+	}
+
+	word_lenght = 0;
+	print_raw++;
+
+	move(6,0);
+	clrtoeol();
+
+	for (i = N_WORDS * print_raw; i < N_WORDS * (1 + print_raw); i++) {
+		mvprintw(6, x_offset + word_lenght, words[i]);
+		word_lenght += strlen(words[i]) + 1;
+	}
 }
