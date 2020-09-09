@@ -16,6 +16,8 @@
 #define WRONG_WORD 2
 #define SELECT_WORD 3
 
+#define ROUND_TIME 15
+
 // variables
 int x_offset, y_offset, tic = 0;
 char *words[MAX_WORDS];
@@ -28,6 +30,7 @@ int feed_words_into_array();
 int shuffle();
 int typing_round();
 int time_track();
+int view_score();
 void second_elapsed();
 void print_words_to_type();
 
@@ -47,9 +50,13 @@ int main()
 	// populate the array with words from a file
 	feed_words_into_array();
 
+	print_words_to_type();
+
 	// type some words!
 	typing_round();
 
+	view_score();
+	
 	endwin();
 	kill(time_child, SIGKILL);
 
@@ -171,13 +178,19 @@ int shuffle()
 	}
 }
 
+int n_ch = 0, playing_round = 0, playing_time = ROUND_TIME;
+int correct_typed_words = 0;
+int incorrect_typed_words = 0;
+int index_word_to_type = 0;
+/* playing_round has 3 state:			*/
+/* 	  0 new game wait to start		 	*/
+/* 	  1 game in progress				*/
+/* 	 -1 time to type finished			*/
+
 int typing_round()
 {
-	print_words_to_type();
 
-	int cursor_x, cursor_y, n_ch = 0, index_word_to_type = 0;
-	int correct_typed_words = 0;
-	int ch;
+	int cursor_x, cursor_y, ch;
 	size_t word_lenght = 0;
 
 	char *user_word, *word_to_type;
@@ -190,8 +203,9 @@ int typing_round()
 	mvprintw(y_offset, x_offset, word_to_type);
 	attroff(COLOR_PAIR(SELECT_WORD));
 
-	move(y_offset + 2, (COLS/2) - 5);
-	while( (ch = getch()) != KEY_ESC )
+	mvprintw(y_offset - 2, (COLS/2) - 3, "01:00");
+	move(y_offset + 2, (COLS/2) - 5 + n_ch);
+	while( playing_round != -1 && (ch = getch()) != KEY_ESC )
 	{
 		move(y_offset + 2, (COLS/2) - 5 + n_ch);
 		switch (ch)
@@ -217,14 +231,23 @@ int typing_round()
 				{
 					print_words_to_type();
 					word_lenght = 0;
+
+					if (word_typed_right(user_word, word_to_type))
+						correct_typed_words++;
+					else
+						incorrect_typed_words++;
+
 				} else {
 					if (word_typed_right(user_word, word_to_type))
 					{
 						correct_typed_words++;
 						attron(COLOR_PAIR(RIGHT_WORD));
 
-					} else 
+					} else
+					{
+						incorrect_typed_words++;
 						attron(COLOR_PAIR(WRONG_WORD));
+					}
 
 					// mark as correct or wrong the current typed word
 					mvprintw(y_offset, x_offset + word_lenght, word_to_type);
@@ -238,6 +261,7 @@ int typing_round()
 				// select next word to be typed
 				attron(COLOR_PAIR(SELECT_WORD));
 				mvprintw(y_offset, x_offset + word_lenght, word_to_type);
+				attroff(COLOR_PAIR(SELECT_WORD));
 
 				// reset the cursor
 				move(y_offset + 2, (COLS/2) - 5);
@@ -249,11 +273,16 @@ int typing_round()
 			case KEY_ESC:
 				endwin();
 				return 0;
+			case ERR:
+				break;
 			default:
 
 				*(user_word++) = ch;
 				*user_word = '\0';
-				n_ch++;
+			 	n_ch++;
+
+				if(playing_round == 0)
+					playing_round = 1;
 
 				if( typing_word_correctly(user_word - n_ch, word_to_type) )
 					attron(COLOR_PAIR(RIGHT_WORD));
@@ -264,17 +293,45 @@ int typing_round()
 				break;
 		}
 	}
-
 	return 1;
+}
+
+int view_score()
+{
+	clear();
+	mvprintw(0,0, "You typed %d words!", index_word_to_type);
+	mvprintw(1,0, "%d were correct", correct_typed_words);
+	mvprintw(2,0, "%d were mistyped", incorrect_typed_words);
+	while( getch() != KEY_BACKSPACE )
+		;
+	
+	return 0;
 }
 
 void second_elapsed()
 {
-	static int i = 1;
-	mvprintw(0, 0 , "%d", i++);
+	// disabling all coloring fancy
+	attroff(COLOR_PAIR(WRONG_WORD));
+	attroff(COLOR_PAIR(RIGHT_WORD));
+	attroff(COLOR_PAIR(SELECT_WORD));
+
+	// decrease the time only if the user is playing
+	if(playing_round == 1)
+		mvprintw(y_offset - 2, (COLS/2) - 3, (playing_time-- >= 10) ? "00:%d" : "00:0%d", playing_time);
+	else if(playing_round == -1) {
+		move(y_offset - 2, (COLS/2) - 3);
+		clrtoeol();
+	}
+
+	// when time reach 0 then end the round
+	playing_round = (playing_time <= 0 && playing_round != 0) ? -1 : playing_round;
+
+	// reset the cursor to the input box
+	move(y_offset + 2, (COLS/2) - 5 + n_ch);
 	refresh();
 }
 
+// Child function that send SIGUSR1 every second 
 int time_track()
 {
 	clock_t begin = clock();
