@@ -15,7 +15,7 @@
 #define SELECT_WORD 3
 
 // variables
-int x_offset;
+int x_offset, y_offset;
 char *words[MAX_WORDS];
 
 // functions
@@ -31,7 +31,6 @@ int main()
 {
 	// gui init
 	init_curses();
-	x_offset = (COLS/2) - 30;
 
 	// populate the array with words from a file
 	feed_words_into_array();
@@ -64,7 +63,10 @@ int init_curses()
 	init_pair(WRONG_WORD, COLOR_RED, COLOR_BLACK);
 	init_pair(SELECT_WORD, COLOR_BLACK, COLOR_WHITE);
 
-	mvprintw(8, (COLS/2)-7, "-----------------");
+	x_offset = (COLS/2) - 30;
+	y_offset = 5;
+
+	mvprintw(y_offset + 3, (COLS/2)-7, "-----------------");
 	// ──────────────
 	return 1;
 }
@@ -94,21 +96,21 @@ void print_words_to_type()
 	attroff(COLOR_PAIR(WRONG_WORD));
 	attroff(COLOR_PAIR(RIGHT_WORD));
 
-	move(5,0);
+	move(y_offset, 0);
 	clrtoeol();
 	for (i = N_WORD_PER_ROW * print_raw; i < N_WORD_PER_ROW + N_WORD_PER_ROW * print_raw; i++) {
-		mvprintw(5, x_offset + word_lenght, words[i]);
+		mvprintw(y_offset, x_offset + word_lenght, words[i]);
 		word_lenght += strlen(words[i]) + 1;
 	}
 
 	word_lenght = 0;
 	print_raw++;
 
-	move(6,0);
+	move(y_offset + 1, 0);
 	clrtoeol();
 
 	for (i = N_WORD_PER_ROW * print_raw; i < N_WORD_PER_ROW * (1 + print_raw); i++) {
-		mvprintw(6, x_offset + word_lenght, words[i]);
+		mvprintw(y_offset + 1, x_offset + word_lenght, words[i]);
 		word_lenght += strlen(words[i]) + 1;
 	}
 }
@@ -172,10 +174,10 @@ int typing_round()
 	strcpy(word_to_type, words[index_word_to_type]);
 
 	attron(COLOR_PAIR(SELECT_WORD));
-	mvprintw(5, x_offset, word_to_type);
+	mvprintw(y_offset, x_offset, word_to_type);
 	attroff(COLOR_PAIR(SELECT_WORD));
 
-	move(7, (COLS/2) - 5);
+	move(y_offset + 2, (COLS/2) - 5);
 	while( (ch = getch()) != KEY_ESC )
 	{
 		switch (ch)
@@ -211,7 +213,7 @@ int typing_round()
 						attron(COLOR_PAIR(WRONG_WORD));
 
 					// mark as correct or wrong the current typed word
-					mvprintw(5, x_offset + word_lenght, word_to_type);
+					mvprintw(y_offset, x_offset + word_lenght, word_to_type);
 					attroff(COLOR_PAIR(WRONG_WORD));
 					attroff(COLOR_PAIR(RIGHT_WORD));
 
@@ -221,10 +223,10 @@ int typing_round()
 
 				// select next word to be typed
 				attron(COLOR_PAIR(SELECT_WORD));
-				mvprintw(5, x_offset + word_lenght, word_to_type);
+				mvprintw(y_offset, x_offset + word_lenght, word_to_type);
 
 				// reset the cursor
-				move(7, (COLS/2) - 5);
+				move(y_offset + 2, (COLS/2) - 5);
 				clrtoeol();
 
 				break;
