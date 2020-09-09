@@ -21,23 +21,19 @@ char *words[MAX_WORDS];
 
 // functions
 int init_curses();
-bool typing_word_correctly(char *user, char *word_to_type);
-void print_new_raw();
-int read_words();
+int typing_word_correctly(char *user, char *word_to_type);
+int word_typed_right(char *user, char *word_to_type);
+int feed_words_into_array();
 int shuffle();
+void print_words_to_type();
 
 int main()
 {
-	// populate the array with words from a file
-	read_words();
-	shuffle();
-	/* for (int i = 0; i < MAX_WORDS; i++) */
-	/* 	printf("%s\n", words[i]); */
-	/* return 0; */
-
 	// gui init
 	init_curses();
 
+	// populate the array with words from a file
+	feed_words_into_array();
 
 	int cursor_x, cursor_y, n_ch = 0, index_word_to_type = 0;
 	int correct_typed_words = 0;
@@ -50,8 +46,9 @@ int main()
 	}
 	x_offset = (COLS/2) - (word_lenght + 7)/2;
 
-	print_new_raw();
+	print_words_to_type();
 
+	double time_spent;
 	char *user_word, *word_to_type;
 	user_word = (char*)malloc(WORD_LENGHT*sizeof(char));
 	word_to_type = (char*)malloc(WORD_LENGHT*sizeof(char));
@@ -64,17 +61,20 @@ int main()
 	mvprintw(5, x_offset, word_to_type);
 	attroff(COLOR_PAIR(SELECT_WORD));
 
-	move(7, (COLS/2) - 5);
-	while((ch = getch()) != KEY_ESC)
+	while( (ch = getch()) != KEY_ESC )
 	{
 		getyx(stdscr, cursor_y, cursor_x);
 
+		move(7, (COLS/2) - 5 + n_ch);
 		switch (ch)
 		{
 			case KEY_BACKSPACE:
-				mvdelch(cursor_y, cursor_x - 1);
-				user_word--;
-				n_ch--;
+				if(n_ch > 0)
+				{
+					mvdelch(cursor_y, cursor_x - 1);
+					user_word--;
+					n_ch--;
+				}
 				break;
 			case ' ':
 				// end the string
@@ -86,10 +86,10 @@ int main()
 				index_word_to_type++;
 				if (index_word_to_type == (N_WORDS * print_raw))
 				{
-					print_new_raw();
+					print_words_to_type();
 					word_lenght = 0;
 				} else {
-					if (typing_word_correctly(user_word, word_to_type))
+					if (word_typed_right(user_word, word_to_type))
 					{
 						correct_typed_words++;
 						attron(COLOR_PAIR(RIGHT_WORD));
@@ -117,7 +117,11 @@ int main()
 				break;
 			case '\n':
 				break;
+			case KEY_ESC:
+				endwin();
+				return 0;
 			default:
+
 				*(user_word++) = ch;
 				*user_word = '\0';
 				n_ch++;
@@ -137,7 +141,7 @@ int main()
 	return 0;
 }
 
-bool typing_word_correctly(char *user, char *word_to_type){
+int typing_word_correctly(char *user, char *word_to_type){
 	for( ; *user != '\0' ; user++, word_to_type++ ){
 		if (*user != *word_to_type)
 			return 0;
@@ -145,13 +149,21 @@ bool typing_word_correctly(char *user, char *word_to_type){
 	return 1;
 }
 
+int word_typed_right(char *user, char *word_to_type){
+	for( ; *user == *word_to_type ; user++, word_to_type++ ){
+		if (*user == '\0')
+			return 1;
+	}
+	return 0;
+}
 int init_curses()
 {
-	// initial setup
+	// initial curses setup
 	initscr();
 	raw();
 	keypad(stdscr, TRUE);
 	noecho();
+	/* timeout(1); */
 
 	if(has_colors() == FALSE)
 	{	endwin();
@@ -169,7 +181,7 @@ int init_curses()
 	return 1;
 }
 
-void print_new_raw()
+void print_words_to_type()
 {
 	size_t word_lenght = 0;
 	int i;
@@ -196,7 +208,7 @@ void print_new_raw()
 	}
 }
 
-int read_words()
+int feed_words_into_array()
 {
 	FILE *words_file;
 	words_file = fopen("words.txt", "r");
@@ -209,6 +221,7 @@ int read_words()
 
 	while ((fscanf(words_file, "%s", buffer) != EOF) && i < MAX_WORDS )
 	{
+		// 1/3 of probabilty that the word will be added to the array
 		if (rand() % 4 == 1)
 		{
 			words[i] = (char*)malloc(WORD_LENGHT*sizeof(char));
@@ -219,6 +232,8 @@ int read_words()
 	
 	free(buffer);
 	fclose(words_file);
+
+	shuffle();
 
 	return 1;
 }
