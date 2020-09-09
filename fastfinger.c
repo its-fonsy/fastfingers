@@ -1,6 +1,8 @@
 #include <curses.h>
 #include <string.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <unistd.h>
 #include <time.h>
 
 #define N_WORD_PER_ROW 7
@@ -15,7 +17,7 @@
 #define SELECT_WORD 3
 
 // variables
-int x_offset, y_offset;
+int x_offset, y_offset, tic = 0;
 char *words[MAX_WORDS];
 
 // functions
@@ -25,12 +27,22 @@ int word_typed_right(char *user, char *word_to_type);
 int feed_words_into_array();
 int shuffle();
 int typing_round();
+int time_track();
+void second_elapsed();
 void print_words_to_type();
 
 int main()
 {
+	int time_child;
+	time_child = fork();
+
 	// gui init
 	init_curses();
+	
+	if (time_child == 0)
+		time_track();
+
+	signal(SIGUSR1, second_elapsed);
 
 	// populate the array with words from a file
 	feed_words_into_array();
@@ -38,7 +50,8 @@ int main()
 	// type some words!
 	typing_round();
 
-	endwin(); 
+	endwin();
+	kill(time_child, SIGKILL);
 
 	return 0;
 }
@@ -180,6 +193,7 @@ int typing_round()
 	move(y_offset + 2, (COLS/2) - 5);
 	while( (ch = getch()) != KEY_ESC )
 	{
+		move(y_offset + 2, (COLS/2) - 5 + n_ch);
 		switch (ch)
 		{
 			case KEY_BACKSPACE:
@@ -252,4 +266,28 @@ int typing_round()
 	}
 
 	return 1;
+}
+
+void second_elapsed()
+{
+	static int i = 1;
+	mvprintw(0, 0 , "%d", i++);
+	refresh();
+}
+
+int time_track()
+{
+	clock_t begin = clock();
+	double time_spent;
+
+	while(1)
+	{
+		time_spent = (double)(clock() - begin) / CLOCKS_PER_SEC;
+
+		if(time_spent > 1.0)
+		{
+			begin = clock();
+			kill(getppid(), SIGUSR1);
+		}
+	}
 }
