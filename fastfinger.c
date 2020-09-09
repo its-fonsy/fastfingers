@@ -1,10 +1,11 @@
 #include <curses.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define N_WORDS 8
 #define MAX_WORDS 255
-#define WORD_LENGHT 8
+#define WORD_LENGHT 16
 
 #define KEY_ESC 27
 
@@ -16,20 +17,27 @@
 // variables
 uint8_t print_raw = 0;
 int x_offset;
-char *words[MAX_WORDS] = {"ciao", "prova", "test", "luce", "astronomo", "fiore", "pianeta", "inventore",
-	"capello", "capire", "capitare", "capo", "carattere", "caratteristico", "carne", "caro",
-	"carta", "casa", "caso", "cattivo", "cattolico", "causa", "cavallo", "celebrare",
-	"centrale", "centro", "cercare", "certamente", "certo", "che", "chi", "chiamare",
-	"chiaro", "chiave", "chiedere", "chiesa", "chilometro", "chissà", "chiudere", "ci"};
+char *words[MAX_WORDS];
 
 // functions
 int init_curses();
 bool typing_word_correctly(char *user, char *word_to_type);
 void print_new_raw();
+int read_words();
+int shuffle();
 
 int main()
 {
+	// populate the array with words from a file
+	read_words();
+	shuffle();
+	/* for (int i = 0; i < MAX_WORDS; i++) */
+	/* 	printf("%s\n", words[i]); */
+	/* return 0; */
+
+	// gui init
 	init_curses();
+
 
 	int cursor_x, cursor_y, n_ch = 0, index_word_to_type = 0;
 	int correct_typed_words = 0;
@@ -185,5 +193,47 @@ void print_new_raw()
 	for (i = N_WORDS * print_raw; i < N_WORDS * (1 + print_raw); i++) {
 		mvprintw(6, x_offset + word_lenght, words[i]);
 		word_lenght += strlen(words[i]) + 1;
+	}
+}
+
+int read_words()
+{
+	FILE *words_file;
+	words_file = fopen("words.txt", "r");
+
+	int i = 0, j;
+	char *buffer;
+	buffer = (char*)malloc(WORD_LENGHT*sizeof(char));
+
+	srand((unsigned) time(NULL));
+
+	while ((fscanf(words_file, "%s", buffer) != EOF) && i < MAX_WORDS )
+	{
+		if (rand() % 4 == 1)
+		{
+			words[i] = (char*)malloc(WORD_LENGHT*sizeof(char));
+			strcpy(words[i], buffer);
+			i++;
+		}
+	}
+	
+	free(buffer);
+	fclose(words_file);
+
+	return 1;
+}
+
+int shuffle()
+{
+	int indx1, indx2;
+	char *dummy;
+	srand((unsigned) time(NULL));
+
+	for (int i = 0; i < 500; i++){ 
+		indx1 = rand() % 255;
+		dummy = words[indx1];
+		indx2 = rand() % 255;
+		words[indx1] = words[indx2];
+		words[indx2] = dummy;
 	}
 }
