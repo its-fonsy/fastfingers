@@ -60,20 +60,17 @@ int main()
 		feed_words_into_array();
 		print_words_to_type();
 
-		// type some words!
+		// type some words
 		if( typing_round() )
 		{
 			// view the score of a round
 			view_score();
 
-			// BACKSPACE to exit
+			// CTRL+C to exit
 			// TAB to play again
 			while((ch = getch()))
-				if(ch == '	' || ch == KEY_BACKSPACE)
+				if(ch == '	')
 					break;
-
-			if (ch == KEY_BACKSPACE)
-				play_again = 0;
 		}
 		clear();
 	}
@@ -88,7 +85,7 @@ int init_curses()
 {
 	// initial curses setup
 	initscr();
-	raw();
+	/* raw(); */
 	keypad(stdscr, TRUE);
 	noecho();
 	/* timeout(1); */
@@ -316,7 +313,7 @@ int typing_round()
 				*user_word = '\0';
 			 	n_ch++;
 
-				if(playing_round == 0)
+				if(!playing_round)
 					playing_round = 1;
 
 				if( typing_word_correctly(user_word - n_ch, word_to_type) )
@@ -328,8 +325,27 @@ int typing_round()
 				break;
 		}
 	}
-	// round ended because of time expired
+	// round ended because the time expired
 	
+	return 1;
+}
+
+int view_score()
+{
+	clear();
+	
+	// disable color text
+	attroff(COLOR_PAIR(WRONG_WORD));
+	attroff(COLOR_PAIR(RIGHT_WORD));
+	attroff(COLOR_PAIR(SELECT_WORD));
+
+	// print the score
+	mvprintw(y_offset    , (COLS/2) - 3, "%d WPM", index_word_to_type);
+	mvprintw(y_offset + 1, (COLS/2) - 8, "Correct words: %d", correct_typed_words);
+	mvprintw(y_offset + 2, (COLS/2) - 8, "Mistyped words: %d", incorrect_typed_words);
+	mvprintw(y_offset + 4, (COLS/2) - 8, "Press CTRL+C to exit", incorrect_typed_words);
+	mvprintw(y_offset + 5, (COLS/2) - 8, "Press TAB to play again", incorrect_typed_words);
+
 	// reset the round variables
 	playing_round 		= 0;
 	print_raw 			= 0;
@@ -341,22 +357,6 @@ int typing_round()
 	correct_typed_words 	= 0;
 	incorrect_typed_words 	= 0;
 	index_word_to_type 		= 0;
-
-	return 1;
-}
-
-int view_score()
-{
-	clear();
-	
-	attroff(COLOR_PAIR(WRONG_WORD));
-	attroff(COLOR_PAIR(RIGHT_WORD));
-	attroff(COLOR_PAIR(SELECT_WORD));
-
-	mvprintw(y_offset,     (COLS/2) - 3, "%d WPM", index_word_to_type);
-	mvprintw(y_offset + 1, (COLS/2) - 8, "Correct words: %d", correct_typed_words);
-	mvprintw(y_offset + 2, (COLS/2) - 8, "Mistyped words: %d", incorrect_typed_words);
-	mvprintw(y_offset + 4, (COLS/2) - 8, "Press BACKSPACE to exit", incorrect_typed_words);
 
 	return 1;
 }
