@@ -36,26 +36,47 @@ void print_words_to_type();
 
 int main()
 {
-	int time_child;
+	int time_child, ch;
+	int play_again = 1;
 	time_child = fork();
 
 	// gui init
 	init_curses();
+
+	// malloc the words array
+	for (int i = 0; i < MAX_WORDS; i++)
+		words[i] = (char*)malloc(WORD_LENGHT*sizeof(char));
 	
+	// child take track of time
 	if (time_child == 0)
 		time_track();
 
+	// father wait for child signals
 	signal(SIGUSR1, second_elapsed);
 
-	// populate the array with words from a file
-	feed_words_into_array();
+	while(play_again)
+	{
+		// populate the array with words from a file
+		feed_words_into_array();
+		print_words_to_type();
 
-	print_words_to_type();
+		// type some words!
+		if( typing_round() )
+		{
+			// view the score of a round
+			view_score();
 
-	// type some words!
-	typing_round();
+			// BACKSPACE to exit
+			// TAB to play again
+			while((ch = getch()))
+				if(ch == '	' || ch == KEY_BACKSPACE)
+					break;
 
-	view_score();
+			if (ch == KEY_BACKSPACE)
+				play_again = 0;
+		}
+		clear();
+	}
 	
 	endwin();
 	kill(time_child, SIGKILL);
@@ -141,15 +162,10 @@ int feed_words_into_array()
 	words_file = fopen("words.txt", "r");
 
 	int i = 0;
-	char *buffer;
-	buffer = (char*)malloc(WORD_LENGHT*sizeof(char));
+	char *buffer = (char*)malloc(WORD_LENGHT*sizeof(char));
 
 	srand((unsigned) time(NULL));
 
-	for (i = 0; i < MAX_WORDS; i++)
-		words[i] = (char*)malloc(WORD_LENGHT*sizeof(char));
-
-	i = 0;
 	// 1/3 of probabilty that the word will be added to the array
 	while ((fscanf(words_file, "%s", buffer) != EOF) && i < MAX_WORDS )
 		if (rand() % 4 == 1)
@@ -179,17 +195,17 @@ int shuffle()
 }
 
 int n_ch = 0, playing_round = 0, playing_time = ROUND_TIME;
-int correct_typed_words = 0;
-int incorrect_typed_words = 0;
-int index_word_to_type = 0;
+int correct_typed_words 	= 0;
+int incorrect_typed_words 	= 0;
+int index_word_to_type 		= 0;
+
 /* playing_round has 3 state:			*/
-/* 	  0 new game wait to start		 	*/
+/* 	  0 new game wait to start	 		*/
 /* 	  1 game in progress				*/
-/* 	 -1 time to type finished			*/
+/* 	 -1 round ended cause time expired	*/
 
 int typing_round()
 {
-
 	int cursor_x, cursor_y, ch;
 	size_t word_lenght = 0;
 
@@ -203,9 +219,15 @@ int typing_round()
 	mvprintw(y_offset, x_offset, word_to_type);
 	attroff(COLOR_PAIR(SELECT_WORD));
 
+	// print the start time
 	mvprintw(y_offset - 2, (COLS/2) - 3, "01:00");
-	move(y_offset + 2, (COLS/2) - 5 + n_ch);
-	while( playing_round != -1 && (ch = getch()) != KEY_ESC )
+
+	// clear the cursor line and move on position
+	move(y_offset + 2, 0);
+	clrtoeol();
+	move(y_offset + 2, (COLS/2) - 5);
+
+	while( playing_round != -1 && (ch = getch()))
 	{
 		move(y_offset + 2, (COLS/2) - 5 + n_ch);
 		switch (ch)
@@ -268,13 +290,26 @@ int typing_round()
 				clrtoeol();
 
 				break;
+
 			case '\n':
 				break;
-			case KEY_ESC:
-				endwin();
-				return 0;
-			case ERR:
-				break;
+
+			case '	':
+
+				// reset the round variables
+				playing_round 		= 0;
+				print_raw 			= 0;
+				index_word_to_type 	= 0;
+				n_ch 				= 0;
+				playing_time 		= ROUND_TIME;
+
+				// reset the score
+				correct_typed_words 	= 0;
+				incorrect_typed_words 	= 0;
+				index_word_to_type 		= 0;
+
+				return 0; break;
+
 			default:
 
 				*(user_word++) = ch;
@@ -293,19 +328,37 @@ int typing_round()
 				break;
 		}
 	}
+	// round ended because of time expired
+	
+	// reset the round variables
+	playing_round 		= 0;
+	print_raw 			= 0;
+	index_word_to_type 	= 0;
+	n_ch 				= 0;
+	playing_time 		= ROUND_TIME;
+
+	// reset the score
+	correct_typed_words 	= 0;
+	incorrect_typed_words 	= 0;
+	index_word_to_type 		= 0;
+
 	return 1;
 }
 
 int view_score()
 {
 	clear();
-	mvprintw(0,0, "You typed %d words!", index_word_to_type);
-	mvprintw(1,0, "%d were correct", correct_typed_words);
-	mvprintw(2,0, "%d were mistyped", incorrect_typed_words);
-	while( getch() != KEY_BACKSPACE )
-		;
 	
-	return 0;
+	attroff(COLOR_PAIR(WRONG_WORD));
+	attroff(COLOR_PAIR(RIGHT_WORD));
+	attroff(COLOR_PAIR(SELECT_WORD));
+
+	mvprintw(y_offset,     (COLS/2) - 3, "%d WPM", index_word_to_type);
+	mvprintw(y_offset + 1, (COLS/2) - 8, "Correct words: %d", correct_typed_words);
+	mvprintw(y_offset + 2, (COLS/2) - 8, "Mistyped words: %d", incorrect_typed_words);
+	mvprintw(y_offset + 4, (COLS/2) - 8, "Press BACKSPACE to exit", incorrect_typed_words);
+
+	return 1;
 }
 
 void second_elapsed()
