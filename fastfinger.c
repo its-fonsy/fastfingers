@@ -16,7 +16,7 @@
 #define WRONG_WORD 2
 #define SELECT_WORD 3
 
-#define ROUND_TIME 15
+#define ROUND_TIME 59
 
 // variables
 int x_offset, y_offset, tic = 0;
@@ -31,6 +31,7 @@ int shuffle();
 int typing_round();
 int time_track();
 int view_score();
+int draw_gui();
 void second_elapsed();
 void print_words_to_type();
 
@@ -56,6 +57,8 @@ int main()
 
 	while(play_again)
 	{
+		draw_gui();
+
 		// populate the array with words from a file
 		feed_words_into_array();
 		print_words_to_type();
@@ -63,6 +66,9 @@ int main()
 		// type some words
 		if( typing_round() )
 		{
+			// disable cursor
+			curs_set(0);
+
 			// view the score of a round
 			view_score();
 
@@ -73,6 +79,7 @@ int main()
 					break;
 		}
 		clear();
+		curs_set(1);
 	}
 	
 	endwin();
@@ -104,24 +111,29 @@ int init_curses()
 	x_offset = (COLS/2) - 30;
 	y_offset = 5;
 
-	mvprintw(y_offset + 3, (COLS/2)-7, "-----------------");
-	// ──────────────
 	return 1;
 }
 
-int typing_word_correctly(char *user, char *word_to_type){
-	for( ; *user != '\0' ; user++, word_to_type++ ){
+int draw_gui()
+{
+
+
+	return 1;
+}
+
+int typing_word_correctly(char *user, char *word_to_type)
+{
+	for( ; *user != '\0' ; user++, word_to_type++ )
 		if (*user != *word_to_type)
 			return 0;
-	}
 	return 1;
 }
 
-int word_typed_right(char *user, char *word_to_type){
-	for( ; *user == *word_to_type ; user++, word_to_type++ ){
+int word_typed_right(char *user, char *word_to_type)
+{
+	for( ; *user == *word_to_type ; user++, word_to_type++ )
 		if (*user == '\0')
 			return 1;
-	}
 	return 0;
 }
 
@@ -217,11 +229,20 @@ int typing_round()
 	attroff(COLOR_PAIR(SELECT_WORD));
 
 	// print the start time
+	attron(A_BOLD);
 	mvprintw(y_offset - 2, (COLS/2) - 3, "01:00");
+	attroff(A_BOLD);
 
 	// clear the cursor line and move on position
 	move(y_offset + 2, 0);
 	clrtoeol();
+	move(y_offset + 2, (COLS/2) - 5);
+
+	// print a line under user input
+	mvprintw(y_offset + 3, (COLS/2)-7, "-----------------");
+	// ──────────────
+
+	// move the cursor to user input
 	move(y_offset + 2, (COLS/2) - 5);
 
 	while( playing_round != -1 && (ch = getch()))
@@ -239,6 +260,11 @@ int typing_round()
 				}
 				break;
 			case ' ':
+
+				// missclick
+				if(!n_ch)
+					break;
+
 				// end the string
 				*user_word = '\0';
 				user_word -= n_ch;
@@ -369,12 +395,14 @@ void second_elapsed()
 	attroff(COLOR_PAIR(SELECT_WORD));
 
 	// decrease the time only if the user is playing
+	attron(A_BOLD);
 	if(playing_round == 1)
 		mvprintw(y_offset - 2, (COLS/2) - 3, (playing_time-- >= 10) ? "00:%d" : "00:0%d", playing_time);
 	else if(playing_round == -1) {
 		move(y_offset - 2, (COLS/2) - 3);
 		clrtoeol();
 	}
+	attroff(A_BOLD);
 
 	// when time reach 0 then end the round
 	playing_round = (playing_time <= 0 && playing_round != 0) ? -1 : playing_round;
