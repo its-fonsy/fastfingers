@@ -1,7 +1,8 @@
-#include <curses.h>
+#include <ncurses.h>
 #include <string.h>
 #include <stdlib.h>
 #include <signal.h>
+#include <locale.h>
 #include <unistd.h>
 #include <time.h>
 
@@ -16,7 +17,7 @@
 #define WRONG_WORD 2
 #define SELECT_WORD 3
 
-#define ROUND_TIME 59
+#define ROUND_TIME 10
 
 // variables
 int x_offset, y_offset, tic = 0;
@@ -52,7 +53,7 @@ int main()
 	if (time_child == 0)
 		time_track();
 
-	// father wait for child signals
+	// father handle child signals
 	signal(SIGUSR1, second_elapsed);
 
 	while(play_again)
@@ -90,6 +91,9 @@ int main()
 
 int init_curses()
 {
+	// set locale for extended ASCII
+	setlocale(LC_ALL, "");
+
 	// initial curses setup
 	initscr();
 	/* raw(); */
@@ -116,7 +120,19 @@ int init_curses()
 
 int draw_gui()
 {
+	attron(COLOR_PAIR(SELECT_WORD));
 
+	// draw a white line
+	move(0,0);
+	for (int i = 0; i < COLS; i++)
+		addch(' ');
+
+	// print some info
+	mvprintw(0, 2, "CTRL+C to exit");
+	mvprintw(0, (COLS/2) - 6, "Fast Fingers");
+	mvprintw(0, COLS - 14, "TAB to reset");
+
+	attroff(COLOR_PAIR(SELECT_WORD));
 
 	return 1;
 }
@@ -137,6 +153,15 @@ int word_typed_right(char *user, char *word_to_type)
 	return 0;
 }
 
+int string_len(char *s)
+{
+	int i = 0;
+	for(; *s != '\0'; s++, i++)
+		if(*s == -61)
+			i--;
+	return i;
+}
+
 uint8_t print_raw = 0;
 void print_words_to_type()
 {
@@ -149,8 +174,9 @@ void print_words_to_type()
 	move(y_offset, 0);
 	clrtoeol();
 	for (i = N_WORD_PER_ROW * print_raw; i < N_WORD_PER_ROW + N_WORD_PER_ROW * print_raw; i++) {
-		mvprintw(y_offset, x_offset + word_lenght, words[i]);
-		word_lenght += strlen(words[i]) + 1;
+		/* mvprintw(y_offset, x_offset + word_lenght, words[i]); */
+		mvaddstr(y_offset, x_offset + word_lenght, words[i]);
+		word_lenght += string_len(words[i]) + 1;
 	}
 
 	word_lenght = 0;
@@ -160,8 +186,9 @@ void print_words_to_type()
 	clrtoeol();
 
 	for (i = N_WORD_PER_ROW * print_raw; i < N_WORD_PER_ROW * (1 + print_raw); i++) {
-		mvprintw(y_offset + 1, x_offset + word_lenght, words[i]);
-		word_lenght += strlen(words[i]) + 1;
+		/* mvprintw(y_offset + 1, x_offset + word_lenght, words[i]); */
+		mvaddstr(y_offset + 1, x_offset + word_lenght, words[i]);
+		word_lenght += string_len(words[i]) + 1;
 	}
 }
 
@@ -218,11 +245,23 @@ int typing_round()
 	int cursor_x, cursor_y, ch;
 	size_t word_lenght = 0;
 
-	char *user_word, *word_to_type;
+	char *user_word, *word_to_type, *user_char;
+	user_char = malloc(sizeof(char));
 	user_word = (char*)malloc(WORD_LENGHT*sizeof(char));
 	word_to_type = (char*)malloc(WORD_LENGHT*sizeof(char));
 
 	strcpy(word_to_type, words[index_word_to_type]);
+	/* strcpy(word_to_type, "àèìòù"); */
+	/* for(ch = 0; *word_to_type != '\0'; ch++, word_to_type++) */
+	/* 	mvprintw(ch + 20, 0, "%d", *word_to_type); */
+
+	/* word_to_type -= ch; */
+
+	/* ch++; */
+	/* strcpy(word_to_type, "lato"); */
+	/* for(; *word_to_type != '\0'; ch++, word_to_type++) */
+	/* 	mvprintw(ch + 20, 0, "%d", *word_to_type); */
+
 
 	attron(COLOR_PAIR(SELECT_WORD));
 	mvprintw(y_offset, x_offset, word_to_type);
@@ -239,15 +278,17 @@ int typing_round()
 	move(y_offset + 2, (COLS/2) - 5);
 
 	// print a line under user input
-	mvprintw(y_offset + 3, (COLS/2)-7, "-----------------");
-	// ──────────────
+	/* move(y_offset + 4, (COLS/2) - 5 - 2); */
+	mvaddstr(y_offset + 4, (COLS/2) - 5 - 2, "───────────");
+	/* addstr("─"); */
 
 	// move the cursor to user input
-	move(y_offset + 2, (COLS/2) - 5);
+	move(y_offset + 3, (COLS/2) - 5);
 
 	while( playing_round != -1 && (ch = getch()))
 	{
-		move(y_offset + 2, (COLS/2) - 5 + n_ch);
+		/* move(y_offset + 3, (COLS/2) - 5 + n_ch); */
+		/* move(y_offset + 3, (COLS/2) - 5 + string_len(user_word)); */
 		switch (ch)
 		{
 			case KEY_BACKSPACE:
@@ -299,7 +340,7 @@ int typing_round()
 					attroff(COLOR_PAIR(WRONG_WORD));
 					attroff(COLOR_PAIR(RIGHT_WORD));
 
-					word_lenght += strlen(word_to_type) + 1;
+					word_lenght += string_len(word_to_type) + 1;
 				}
 				strcpy(word_to_type, words[index_word_to_type]);
 
@@ -309,16 +350,15 @@ int typing_round()
 				attroff(COLOR_PAIR(SELECT_WORD));
 
 				// reset the cursor
-				move(y_offset + 2, (COLS/2) - 5);
+				move(y_offset + 3, (COLS/2) - 5);
 				clrtoeol();
 
 				break;
 
-			case '\n':
+			case '\n' || KEY_ESC:
 				break;
 
-			case '	':
-
+			case '	': // TAB pressed
 				// reset the round variables
 				playing_round 		= 0;
 				print_raw 			= 0;
@@ -334,21 +374,80 @@ int typing_round()
 				return 0; break;
 
 			default:
-
-				*(user_word++) = ch;
-				*user_word = '\0';
-			 	n_ch++;
-
-				if(!playing_round)
-					playing_round = 1;
-
-				if( typing_word_correctly(user_word - n_ch, word_to_type) )
-					attron(COLOR_PAIR(RIGHT_WORD));
-				else
-					attron(COLOR_PAIR(WRONG_WORD));
-
-				addch(ch);
 				break;
+		}
+
+
+		// ch is alphabetical character
+		if ( ((ch >=97)   && (ch <= 122))||	// a to z
+			  (ch == 160) || (ch == 168) ||	// à and è
+			  (ch == 172) || (ch == 178) ||	// ì and ò
+						   	 (ch == 185) )	// ù
+		{
+
+			switch(ch){
+				case 160: // à
+					*(user_word++) = -61;
+					*(user_word++) = -96;
+					n_ch += 2;
+					break;
+
+				case 168: // è
+					*(user_word++) = -61;
+					*(user_word++) = -88;
+					n_ch += 2;
+					break;
+
+				case 172: // ì
+					*(user_word++) = -61;
+					*(user_word++) = -84;
+					n_ch += 2;
+					break;
+
+				case 178: // ò
+					*(user_word++) = -61;
+					*(user_word++) = -78;
+					n_ch += 2;
+					break;
+
+				case 185: // ù
+					*(user_word++) = -61;
+					*(user_word++) = -71;
+					n_ch += 2;
+					break;
+
+				default: // a to z
+					*(user_word++) = ch;
+					n_ch++;
+					break;
+			}
+
+			*user_word = '\0';
+
+			if(!playing_round)
+				playing_round = 1;
+
+			if( typing_word_correctly(user_word - n_ch, word_to_type) )
+				attron(COLOR_PAIR(RIGHT_WORD));
+			else
+				attron(COLOR_PAIR(WRONG_WORD));
+
+			move(y_offset + 3, (COLS/2) - 5);
+			addstr(user_word - n_ch);
+			/* if((ch >=97) && (ch <= 122)) */
+			/* 	addstr(ch); */
+			/* else if(ch == 160) */
+			/* 	addstr("à"); */
+			/* else if(ch == 168) */
+			/* 	addstr("è"); */
+			/* else if(ch == 172) */
+			/* 	addstr("ì"); */
+			/* else if(ch == 178) */
+			/* 	addstr("ò"); */
+			/* else if(ch == 185) */
+			/* 	addstr("ù"); */
+
+			move(y_offset + 3, (COLS/2) - 5 + string_len(user_word - n_ch));
 		}
 	}
 	// round ended because the time expired
@@ -359,6 +458,7 @@ int typing_round()
 int view_score()
 {
 	clear();
+	draw_gui();
 	
 	// disable color text
 	attroff(COLOR_PAIR(WRONG_WORD));
@@ -366,11 +466,28 @@ int view_score()
 	attroff(COLOR_PAIR(SELECT_WORD));
 
 	// print the score
-	mvprintw(y_offset    , (COLS/2) - 3, "%d WPM", index_word_to_type);
+	attron(A_BOLD);
+	mvprintw(y_offset, (COLS/2) - 3, "%d WPM", index_word_to_type);
+	attroff(A_BOLD);
+
 	mvprintw(y_offset + 1, (COLS/2) - 8, "Correct words: %d", correct_typed_words);
 	mvprintw(y_offset + 2, (COLS/2) - 8, "Mistyped words: %d", incorrect_typed_words);
-	mvprintw(y_offset + 4, (COLS/2) - 8, "Press CTRL+C to exit", incorrect_typed_words);
-	mvprintw(y_offset + 5, (COLS/2) - 8, "Press TAB to play again", incorrect_typed_words);
+
+	// print exit key
+	move(y_offset + 4, (COLS/2) - 20 - 5);
+	printw("Press ");
+	attron(A_BOLD);
+	printw("CTRL+C");
+	attroff(A_BOLD);
+	printw(" to exit");
+
+	// print replay key
+	move(y_offset + 4, (COLS/2) + 5);
+	printw("Press ");
+	attron(A_BOLD);
+	printw("TAB");
+	attroff(A_BOLD);
+	printw(" to play again");
 
 	// reset the round variables
 	playing_round 		= 0;
@@ -408,7 +525,7 @@ void second_elapsed()
 	playing_round = (playing_time <= 0 && playing_round != 0) ? -1 : playing_round;
 
 	// reset the cursor to the input box
-	move(y_offset + 2, (COLS/2) - 5 + n_ch);
+	move(y_offset + 3, (COLS/2) - 5 + n_ch);
 	refresh();
 }
 
