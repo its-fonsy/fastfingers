@@ -234,6 +234,7 @@ int n_ch = 0, playing_round = 0, playing_time = ROUND_TIME;
 int correct_typed_words 	= 0;
 int incorrect_typed_words 	= 0;
 int index_word_to_type 		= 0;
+char *user_word;
 
 /* playing_round has 3 state:			*/
 /* 	  0 new game wait to start	 		*/
@@ -245,23 +246,11 @@ int typing_round()
 	int cursor_x, cursor_y, ch;
 	size_t word_lenght = 0;
 
-	char *user_word, *word_to_type, *user_char;
-	user_char = malloc(sizeof(char));
+	char *word_to_type;
 	user_word = (char*)malloc(WORD_LENGHT*sizeof(char));
 	word_to_type = (char*)malloc(WORD_LENGHT*sizeof(char));
 
 	strcpy(word_to_type, words[index_word_to_type]);
-	/* strcpy(word_to_type, "àèìòù"); */
-	/* for(ch = 0; *word_to_type != '\0'; ch++, word_to_type++) */
-	/* 	mvprintw(ch + 20, 0, "%d", *word_to_type); */
-
-	/* word_to_type -= ch; */
-
-	/* ch++; */
-	/* strcpy(word_to_type, "lato"); */
-	/* for(; *word_to_type != '\0'; ch++, word_to_type++) */
-	/* 	mvprintw(ch + 20, 0, "%d", *word_to_type); */
-
 
 	attron(COLOR_PAIR(SELECT_WORD));
 	mvprintw(y_offset, x_offset, word_to_type);
@@ -278,17 +267,14 @@ int typing_round()
 	move(y_offset + 2, (COLS/2) - 5);
 
 	// print a line under user input
-	/* move(y_offset + 4, (COLS/2) - 5 - 2); */
-	mvaddstr(y_offset + 4, (COLS/2) - 5 - 2, "───────────");
-	/* addstr("─"); */
+	mvaddstr(y_offset + 4, (COLS/2) - 5 - 1, "────────────────");
 
 	// move the cursor to user input
 	move(y_offset + 3, (COLS/2) - 5);
+	*user_word = '\0';
 
 	while( playing_round != -1 && (ch = getch()))
 	{
-		/* move(y_offset + 3, (COLS/2) - 5 + n_ch); */
-		/* move(y_offset + 3, (COLS/2) - 5 + string_len(user_word)); */
 		switch (ch)
 		{
 			case KEY_BACKSPACE:
@@ -298,6 +284,14 @@ int typing_round()
 					mvdelch(cursor_y, cursor_x - 1);
 					user_word--;
 					n_ch--;
+
+					// dealing with accent letters
+					if(*(--user_word) == -61)
+						n_ch--;
+					else
+						user_word++;
+
+					*user_word = '\0';
 				}
 				break;
 			case ' ':
@@ -349,8 +343,9 @@ int typing_round()
 				mvprintw(y_offset, x_offset + word_lenght, word_to_type);
 				attroff(COLOR_PAIR(SELECT_WORD));
 
-				// reset the cursor
+				// reset the cursor and user word
 				move(y_offset + 3, (COLS/2) - 5);
+				*user_word = '\0';
 				clrtoeol();
 
 				break;
@@ -432,22 +427,19 @@ int typing_round()
 			else
 				attron(COLOR_PAIR(WRONG_WORD));
 
-			move(y_offset + 3, (COLS/2) - 5);
-			addstr(user_word - n_ch);
-			/* if((ch >=97) && (ch <= 122)) */
-			/* 	addstr(ch); */
-			/* else if(ch == 160) */
-			/* 	addstr("à"); */
-			/* else if(ch == 168) */
-			/* 	addstr("è"); */
-			/* else if(ch == 172) */
-			/* 	addstr("ì"); */
-			/* else if(ch == 178) */
-			/* 	addstr("ò"); */
-			/* else if(ch == 185) */
-			/* 	addstr("ù"); */
+			if((ch >=97) && (ch <= 122))
+				addch(ch);
+			else if(ch == 160)
+				addstr("à");
+			else if(ch == 168)
+				addstr("è");
+			else if(ch == 172)
+				addstr("ì");
+			else if(ch == 178)
+				addstr("ò");
+			else if(ch == 185)
+				addstr("ù");
 
-			move(y_offset + 3, (COLS/2) - 5 + string_len(user_word - n_ch));
 		}
 	}
 	// round ended because the time expired
@@ -513,19 +505,16 @@ void second_elapsed()
 
 	// decrease the time only if the user is playing
 	attron(A_BOLD);
-	if(playing_round == 1)
+	if(playing_round)
 		mvprintw(y_offset - 2, (COLS/2) - 3, (playing_time-- >= 10) ? "00:%d" : "00:0%d", playing_time);
-	else if(playing_round == -1) {
-		move(y_offset - 2, (COLS/2) - 3);
-		clrtoeol();
-	}
+
 	attroff(A_BOLD);
 
 	// when time reach 0 then end the round
 	playing_round = (playing_time <= 0 && playing_round != 0) ? -1 : playing_round;
 
 	// reset the cursor to the input box
-	move(y_offset + 3, (COLS/2) - 5 + n_ch);
+	move(y_offset + 3, (COLS/2) - 5 + string_len(user_word - n_ch));
 	refresh();
 }
 
