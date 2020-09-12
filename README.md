@@ -19,7 +19,7 @@ Other language will be supported in the future.
 
 # Commands
 
-- exit with <kbd>CTRL</kbd> + <kbd>C</kbd>
+- exit with <kbd>CTRL+C</kbd>
 - restart or play again with <kbd>TAB</kbd>
 
 # License
