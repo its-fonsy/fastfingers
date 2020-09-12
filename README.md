@@ -19,8 +19,8 @@ Other language will be supported in the future.
 
 # Commands
 
-- exit with `CTRL+C`
-- restart or play again with `TAB`
+- exit with <kbd>control</kbd> + <kbd>c</kbd>
+- restart or play again with <kbd>tab</kbd>
 
 # License
 MIT License
