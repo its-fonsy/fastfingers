@@ -17,7 +17,7 @@
 #define WRONG_WORD 2
 #define SELECT_WORD 3
 
-#define ROUND_TIME 59
+#define ROUND_TIME 5 
 
 // variables
 int x_offset, y_offset, tic = 0;
@@ -469,19 +469,33 @@ int view_score()
 	attroff(COLOR_PAIR(RIGHT_WORD));
 	attroff(COLOR_PAIR(SELECT_WORD));
 
-	// print the score
+	// print the WPM
 	// WPM is calculated with this formula
 	// WPM = (correct_keystroke / 5) / Time[min]
-
 	attron(A_BOLD);
 	mvprintw(y_offset, (COLS/2) - 3, "%d WPM", correct_keystroke / 5);
 	attroff(A_BOLD);
 
-	mvprintw(y_offset + 1, (COLS/2) - 8, "Correct words: %d", correct_typed_words);
-	mvprintw(y_offset + 2, (COLS/2) - 8, "Mistyped words: %d", incorrect_typed_words);
+	// print keystrokes
+	mvprintw(y_offset + 1, (COLS/2) - 8, "Keystrokes: %d (", correct_keystroke + incorrect_keystroke);
+
+	attron(COLOR_PAIR(RIGHT_WORD));
+	printw("%d", correct_keystroke);
+	attroff(COLOR_PAIR(RIGHT_WORD));
+
+	printw("|");
+
+	attron(COLOR_PAIR(WRONG_WORD));
+	printw("%d", incorrect_keystroke);
+	attroff(COLOR_PAIR(WRONG_WORD));
+	printw(")");
+
+	// print correct and incorrect words
+	mvprintw(y_offset + 2, (COLS/2) - 8, "Correct words: %d", correct_typed_words);
+	mvprintw(y_offset + 3, (COLS/2) - 8, "Mistyped words: %d", incorrect_typed_words);
 
 	// print exit key
-	move(y_offset + 4, (COLS/2) - 20 - 5);
+	move(y_offset + 5, (COLS/2) - 20 - 5);
 	printw("Press ");
 	attron(A_BOLD);
 	printw("CTRL+C");
@@ -489,7 +503,7 @@ int view_score()
 	printw(" to exit");
 
 	// print replay key
-	move(y_offset + 4, (COLS/2) + 5);
+	move(y_offset + 5, (COLS/2) + 5);
 	printw("Press ");
 	attron(A_BOLD);
 	printw("TAB");
