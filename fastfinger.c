@@ -235,7 +235,6 @@ int correct_typed_words 	= 0;
 int correct_keystroke		= 0;
 int incorrect_typed_words 	= 0;
 int incorrect_keystroke		= 0;
-int index_word_to_type 		= 0;
 char *user_word;
 
 /* playing_round has 3 state:			*/
@@ -245,7 +244,7 @@ char *user_word;
 
 int typing_round()
 {
-	int cursor_x, cursor_y, ch;
+	int cursor_x, cursor_y, ch, index_word_to_type = 0;
 	size_t word_lenght = 0;
 
 	char *word_to_type;
@@ -257,6 +256,18 @@ int typing_round()
 	attron(COLOR_PAIR(SELECT_WORD));
 	mvprintw(y_offset, x_offset, word_to_type);
 	attroff(COLOR_PAIR(SELECT_WORD));
+
+	// reset the round variables
+	playing_round 		= 0;
+	print_raw 			= 0;
+	n_ch 				= 0;
+	playing_time 		= ROUND_TIME;
+
+	// reset the score
+	correct_typed_words 	= 0;
+	correct_keystroke		= 0;
+	incorrect_typed_words 	= 0;
+	incorrect_keystroke		= 0;
 
 	// print the start time
 	attron(A_BOLD);
@@ -295,7 +306,7 @@ int typing_round()
 					else
 						user_word++;
 
-					*user_word = '\0';
+				*user_word = '\0';
 				}
 				break;
 			case ' ':
@@ -358,20 +369,6 @@ int typing_round()
 				break;
 
 			case '	': // TAB pressed
-				// reset the round variables
-				playing_round 		= 0;
-				print_raw 			= 0;
-				index_word_to_type 	= 0;
-				n_ch 				= 0;
-				playing_time 		= ROUND_TIME;
-
-				// reset the score
-				correct_typed_words 	= 0;
-				correct_keystroke		= 0;
-				incorrect_typed_words 	= 0;
-				incorrect_keystroke		= 0;
-				index_word_to_type 		= 0;
-
 				return 0; break;
 
 			default:
@@ -439,6 +436,7 @@ int typing_round()
 				incorrect_keystroke++;
 			}
 
+
 			if((ch >=97) && (ch <= 122))
 				addch(ch);
 			else if(ch == 160)
@@ -490,7 +488,7 @@ int view_score()
 	attroff(COLOR_PAIR(WRONG_WORD));
 	printw(")");
 
-	// print correct and incorrect words
+	// print number of correct and incorrect words
 	mvprintw(y_offset + 2, (COLS/2) - 8, "Correct words: %d", correct_typed_words);
 	mvprintw(y_offset + 3, (COLS/2) - 8, "Mistyped words: %d", incorrect_typed_words);
 
@@ -510,20 +508,6 @@ int view_score()
 	attroff(A_BOLD);
 	printw(" to play again");
 
-	// reset the round variables
-	playing_round 		= 0;
-	print_raw 			= 0;
-	index_word_to_type 	= 0;
-	n_ch 				= 0;
-	playing_time 		= ROUND_TIME;
-
-	// reset the score
-	correct_typed_words 	= 0;
-	correct_keystroke		= 0;
-	incorrect_keystroke		= 0;
-	incorrect_typed_words 	= 0;
-	index_word_to_type 		= 0;
-
 	return 1;
 }
 
@@ -536,7 +520,7 @@ void second_elapsed()
 
 	// decrease the time only if the user is playing
 	attron(A_BOLD);
-	if(playing_round)
+	if(playing_round == 1)
 		mvprintw(y_offset - 2, (COLS/2) - 3, (playing_time-- >= 10) ? "00:%d" : "00:0%d", playing_time);
 
 	attroff(A_BOLD);
