@@ -309,7 +309,8 @@ int typing_round()
 				*user_word = '\0';
 				}
 				break;
-			case ' ':
+
+			case ' ': // space
 
 				// missclick
 				if(!n_ch)
@@ -376,14 +377,19 @@ int typing_round()
 		}
 
 
-		// ch is alphabetical character
+		// keypress is alphabetical character
 		if ( ((ch >=97)   && (ch <= 122))||	// a to z
 			  (ch == 160) || (ch == 168) ||	// à and è
 			  (ch == 172) || (ch == 178) ||	// ì and ò
-						   	 (ch == 185) )	// ù
+		 	  (ch == 185)             	  )	// ù
 		{
 
-			switch(ch){
+			if(!playing_round)
+				playing_round = 1;
+
+			// deal with accent word
+			switch(ch)
+			{
 				case 160: // à
 					*(user_word++) = -61;
 					*(user_word++) = -96;
@@ -418,12 +424,9 @@ int typing_round()
 					*(user_word++) = ch;
 					n_ch++;
 					break;
-			}
+				}
 
 			*user_word = '\0';
-
-			if(!playing_round)
-				playing_round = 1;
 
 			if( typing_word_correctly(user_word - n_ch, word_to_type) )
 			{
@@ -436,24 +439,26 @@ int typing_round()
 				incorrect_keystroke++;
 			}
 
-
-			if((ch >=97) && (ch <= 122))
-				addch(ch);
-			else if(ch == 160)
-				addstr("à");
-			else if(ch == 168)
-				addstr("è");
-			else if(ch == 172)
-				addstr("ì");
-			else if(ch == 178)
-				addstr("ò");
-			else if(ch == 185)
-				addstr("ù");
-
+			switch(ch)
+			{
+				case 160:
+					addstr("à");
+				case 168:
+					addstr("è");
+				case 172:
+					addstr("ì");
+				case 178:
+					addstr("ò");
+				case 185:
+					addstr("ù");
+				default:
+					addch(ch);
+					break;
+			}
 		}
 	}
+
 	// round ended because the time expired
-	
 	return 1;
 }
 
@@ -522,7 +527,6 @@ void second_elapsed()
 	attron(A_BOLD);
 	if(playing_round == 1)
 		mvprintw(y_offset - 2, (COLS/2) - 3, (playing_time-- >= 10) ? "00:%d" : "00:0%d", playing_time);
-
 	attroff(A_BOLD);
 
 	// when time reach 0 then end the round
@@ -533,7 +537,7 @@ void second_elapsed()
 	refresh();
 }
 
-// Child function that send SIGUSR1 every second 
+// Child send SIGUSR1 every second 
 int time_track()
 {
 	clock_t begin = clock();
@@ -543,7 +547,7 @@ int time_track()
 	{
 		time_spent = (double)(clock() - begin) / CLOCKS_PER_SEC;
 
-		if(time_spent > 1.0)
+		if(time_spent >= 1.0)
 		{
 			begin = clock();
 			kill(getppid(), SIGUSR1);
