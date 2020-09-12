@@ -17,7 +17,7 @@
 #define WRONG_WORD 2
 #define SELECT_WORD 3
 
-#define ROUND_TIME 10
+#define ROUND_TIME 59
 
 // variables
 int x_offset, y_offset, tic = 0;
@@ -232,7 +232,9 @@ int shuffle()
 
 int n_ch = 0, playing_round = 0, playing_time = ROUND_TIME;
 int correct_typed_words 	= 0;
+int correct_keystroke		= 0;
 int incorrect_typed_words 	= 0;
+int incorrect_keystroke		= 0;
 int index_word_to_type 		= 0;
 char *user_word;
 
@@ -282,8 +284,10 @@ int typing_round()
 				{
 					getyx(stdscr, cursor_y, cursor_x);
 					mvdelch(cursor_y, cursor_x - 1);
+
 					user_word--;
 					n_ch--;
+					incorrect_keystroke--;
 
 					// dealing with accent letters
 					if(*(--user_word) == -61)
@@ -363,7 +367,9 @@ int typing_round()
 
 				// reset the score
 				correct_typed_words 	= 0;
+				correct_keystroke		= 0;
 				incorrect_typed_words 	= 0;
+				incorrect_keystroke		= 0;
 				index_word_to_type 		= 0;
 
 				return 0; break;
@@ -423,9 +429,15 @@ int typing_round()
 				playing_round = 1;
 
 			if( typing_word_correctly(user_word - n_ch, word_to_type) )
+			{
+				correct_keystroke++;
 				attron(COLOR_PAIR(RIGHT_WORD));
+			}
 			else
+			{
 				attron(COLOR_PAIR(WRONG_WORD));
+				incorrect_keystroke++;
+			}
 
 			if((ch >=97) && (ch <= 122))
 				addch(ch);
@@ -458,8 +470,11 @@ int view_score()
 	attroff(COLOR_PAIR(SELECT_WORD));
 
 	// print the score
+	// WPM is calculated with this formula
+	// WPM = (correct_keystroke / 5) / Time[min]
+
 	attron(A_BOLD);
-	mvprintw(y_offset, (COLS/2) - 3, "%d WPM", index_word_to_type);
+	mvprintw(y_offset, (COLS/2) - 3, "%d WPM", correct_keystroke / 5);
 	attroff(A_BOLD);
 
 	mvprintw(y_offset + 1, (COLS/2) - 8, "Correct words: %d", correct_typed_words);
@@ -490,6 +505,8 @@ int view_score()
 
 	// reset the score
 	correct_typed_words 	= 0;
+	correct_keystroke		= 0;
+	incorrect_keystroke		= 0;
 	incorrect_typed_words 	= 0;
 	index_word_to_type 		= 0;
 
