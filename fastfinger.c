@@ -17,30 +17,42 @@
 #define WRONG_WORD 2
 #define SELECT_WORD 3
 
-#define ROUND_TIME 5 
+#define DEFAULT_ROUND_TIME 59 
 
 // variables
-int x_offset, y_offset, tic = 0;
+int x_offset, y_offset;
 char *words[MAX_WORDS];
 
 // functions
-int init_curses();
-int typing_word_correctly(char *user, char *word_to_type);
-int word_typed_right(char *user, char *word_to_type);
-int feed_words_into_array();
-int shuffle();
-int typing_round();
 int time_track();
-int view_score();
-int draw_gui();
 void second_elapsed();
-void print_words_to_type();
 
-int main()
+int init_curses();
+int draw_gui();
+int feed_words_into_array();
+void print_words_to_type();
+int typing_round();
+int view_score();
+
+int main(int argc, char *argv[])
 {
 	int time_child, ch;
 	int play_again = 1;
-	time_child = fork();
+
+	if( argc == 2 )
+	{
+		ch = *++argv[1];
+		switch(ch)
+		{
+			case 'h':
+				printf("usage: %s [-h]\n\n", argv[0]);
+				printf("Practice your touch typing in your terminal\n\n");
+				printf("OPTION\n");
+				printf("  -h\t\tPrint this help message\n");
+				break;
+		}
+		return 0;
+	}
 
 	// gui init
 	init_curses();
@@ -50,6 +62,7 @@ int main()
 		words[i] = (char*)malloc(WORD_LENGHT*sizeof(char));
 	
 	// child take track of time
+	time_child = fork();
 	if (time_child == 0)
 		time_track();
 
@@ -192,6 +205,21 @@ void print_words_to_type()
 	}
 }
 
+int shuffle()
+{
+	int indx1, indx2;
+	char *dummy;
+	srand((unsigned) time(NULL));
+
+	for (int i = 0; i < 500; i++){ 
+		indx1 = rand() % 255;
+		dummy = words[indx1];
+		indx2 = rand() % 255;
+		words[indx1] = words[indx2];
+		words[indx2] = dummy;
+	}
+}
+
 int feed_words_into_array()
 {
 	FILE *words_file;
@@ -215,22 +243,7 @@ int feed_words_into_array()
 	return 1;
 }
 
-int shuffle()
-{
-	int indx1, indx2;
-	char *dummy;
-	srand((unsigned) time(NULL));
-
-	for (int i = 0; i < 500; i++){ 
-		indx1 = rand() % 255;
-		dummy = words[indx1];
-		indx2 = rand() % 255;
-		words[indx1] = words[indx2];
-		words[indx2] = dummy;
-	}
-}
-
-int n_ch = 0, playing_round = 0, playing_time = ROUND_TIME;
+int n_ch = 0, playing_round = 0, playing_time = DEFAULT_ROUND_TIME;
 int correct_typed_words 	= 0;
 int correct_keystroke		= 0;
 int incorrect_typed_words 	= 0;
@@ -258,10 +271,9 @@ int typing_round()
 	attroff(COLOR_PAIR(SELECT_WORD));
 
 	// reset the round variables
-	playing_round 		= 0;
-	print_raw 			= 0;
-	n_ch 				= 0;
-	playing_time 		= ROUND_TIME;
+	playing_round 	= 0;
+	n_ch 			= 0;
+	playing_time	= DEFAULT_ROUND_TIME;
 
 	// reset the score
 	correct_typed_words 	= 0;
@@ -370,6 +382,7 @@ int typing_round()
 				break;
 
 			case '	': // TAB pressed
+				print_raw = 0;
 				return 0; break;
 
 			default:
@@ -443,14 +456,19 @@ int typing_round()
 			{
 				case 160:
 					addstr("à");
+					break;
 				case 168:
 					addstr("è");
+					break;
 				case 172:
 					addstr("ì");
+					break;
 				case 178:
 					addstr("ò");
+					break;
 				case 185:
 					addstr("ù");
+					break;
 				default:
 					addch(ch);
 					break;
@@ -459,6 +477,7 @@ int typing_round()
 	}
 
 	// round ended because the time expired
+	print_raw = 0;
 	return 1;
 }
 
