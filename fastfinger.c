@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <time.h>
 
+
 #define N_WORD_PER_ROW 7
 #define MAX_WORDS 255
 #define WORD_LENGHT 16
@@ -45,6 +46,7 @@ int main(int argc, char *argv[])
 		switch(ch)
 		{
 			case 'h':
+				// print usage message
 				printf("usage: %s [-h]\n\n", argv[0]);
 				printf("Practice your touch typing in your terminal\n\n");
 				printf("OPTION\n");
@@ -114,6 +116,7 @@ int init_curses()
 	noecho();
 	/* timeout(1); */
 
+	// no colors no party
 	if(has_colors() == FALSE)
 	{	endwin();
 		printf("Your terminal does not support color\n");
@@ -127,7 +130,6 @@ int init_curses()
 
 	x_offset = (COLS/2) - 30;
 	y_offset = 5;
-
 	return 1;
 }
 
@@ -205,19 +207,16 @@ void print_words_to_type()
 	}
 }
 
+#define SWAP(x, y) do { typeof(x) temp = x; x = y; y = temp; } while (0)
+
 int shuffle()
 {
-	int indx1, indx2;
-	char *dummy;
 	srand((unsigned) time(NULL));
 
-	for (int i = 0; i < 500; i++){ 
-		indx1 = rand() % 255;
-		dummy = words[indx1];
-		indx2 = rand() % 255;
-		words[indx1] = words[indx2];
-		words[indx2] = dummy;
-	}
+	for (int i = 0; i < 500; i++) 
+		SWAP(words[rand() % 255], words[rand() % 255]);
+
+	return 1;
 }
 
 int feed_words_into_array()
@@ -264,8 +263,10 @@ int typing_round()
 	user_word = (char*)malloc(WORD_LENGHT*sizeof(char));
 	word_to_type = (char*)malloc(WORD_LENGHT*sizeof(char));
 
+	// copy the first word to type
 	strcpy(word_to_type, words[index_word_to_type]);
 
+	// select the first word to type
 	attron(COLOR_PAIR(SELECT_WORD));
 	mvprintw(y_offset, x_offset, word_to_type);
 	attroff(COLOR_PAIR(SELECT_WORD));
@@ -305,6 +306,7 @@ int typing_round()
 			case KEY_BACKSPACE:
 				if(n_ch > 0)
 				{
+					// delete character from the word
 					getyx(stdscr, cursor_y, cursor_x);
 					mvdelch(cursor_y, cursor_x - 1);
 
@@ -318,11 +320,11 @@ int typing_round()
 					else
 						user_word++;
 
-				*user_word = '\0';
+					*user_word = '\0';
 				}
 				break;
 
-			case ' ': // space
+			case ' ': // space pressed
 
 				// missclick
 				if(!n_ch)
@@ -333,7 +335,7 @@ int typing_round()
 				user_word -= n_ch;
 				n_ch = 0;
 
-				// update the word that must be typed
+				// update the word to be typed
 				index_word_to_type++;
 				if (index_word_to_type == (N_WORD_PER_ROW * print_raw))
 				{
@@ -389,7 +391,6 @@ int typing_round()
 				break;
 		}
 
-
 		// keypress is alphabetical character
 		if ( ((ch >=97)   && (ch <= 122))||	// a to z
 			  (ch == 160) || (ch == 168) ||	// à and è
@@ -397,6 +398,7 @@ int typing_round()
 		 	  (ch == 185)             	  )	// ù
 		{
 
+			// start the timer
 			if(!playing_round)
 				playing_round = 1;
 
@@ -478,6 +480,11 @@ int typing_round()
 
 	// round ended because the time expired
 	print_raw = 0;
+
+	// memory clear
+	free(user_word);
+	free(word_to_type);
+
 	return 1;
 }
 
@@ -499,7 +506,7 @@ int view_score()
 	attroff(A_BOLD);
 
 	// print keystrokes
-	mvprintw(y_offset + 1, (COLS/2) - 8, "Keystrokes: %d (", correct_keystroke + incorrect_keystroke);
+	mvprintw(y_offset + 1, (COLS/2) - 10, "Keystrokes: %d (", correct_keystroke + incorrect_keystroke);
 
 	attron(COLOR_PAIR(RIGHT_WORD));
 	printw("%d", correct_keystroke);
@@ -513,8 +520,8 @@ int view_score()
 	printw(")");
 
 	// print number of correct and incorrect words
-	mvprintw(y_offset + 2, (COLS/2) - 8, "Correct words: %d", correct_typed_words);
-	mvprintw(y_offset + 3, (COLS/2) - 8, "Mistyped words: %d", incorrect_typed_words);
+	mvprintw(y_offset + 2, (COLS/2) - 10, "Correct words: %d", correct_typed_words);
+	mvprintw(y_offset + 3, (COLS/2) - 10, "Mistyped words: %d", incorrect_typed_words);
 
 	// print exit key
 	move(y_offset + 5, (COLS/2) - 20 - 5);
