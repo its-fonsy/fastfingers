@@ -29,17 +29,6 @@ int string_len(char *s)
 	return i;
 }
 
-#define SWAP(x, y) do { typeof(x) temp = x; x = y; y = temp; } while (0)
-int shuffle(char *array[], int len)
-{
-	srand((unsigned) time(NULL));
-
-	for (int i = 0; i < 500; i++) 
-		SWAP(array[rand() % (len -1)], array[rand() % (len -1)]);
-
-	return 1;
-}
-
 int feed_words_into_array(char* filename, char* array[])
 {
 	FILE *words_file;
@@ -64,3 +53,13 @@ int feed_words_into_array(char* filename, char* array[])
 	return 1;
 }
 
+#define SWAP(x, y) do { typeof(x) temp = x; x = y; y = temp; } while (0)
+int shuffle(char *array[], int len)
+{
+	srand((unsigned) time(NULL));
+
+	for (int i = 0; i < 500; i++) 
+		SWAP(array[rand() % (len -1)], array[rand() % (len -1)]);
+
+	return 1;
+}
