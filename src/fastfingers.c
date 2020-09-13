@@ -6,17 +6,16 @@
 #include <unistd.h>
 #include <time.h>
 
-
-#define N_WORD_PER_ROW 7
+#define MAX_WORDS_PER_ROW 7
 #define MAX_WORDS 255
-#define WORD_LENGHT 16
+#define MAX_WORD_LENGHT 16
 
 #define KEY_ESC 27
 
 // color stuff
-#define RIGHT_WORD 1
-#define WRONG_WORD 2
-#define SELECT_WORD 3
+#define COL_RIGHT_WORD 1
+#define COL_WRONG_WORD 2
+#define COL_SELECT_WORD 3
 
 #define DEFAULT_ROUND_TIME 59 
 
@@ -61,7 +60,7 @@ int main(int argc, char *argv[])
 
 	// malloc the words array
 	for (int i = 0; i < MAX_WORDS; i++)
-		words[i] = (char*)malloc(WORD_LENGHT*sizeof(char));
+		words[i] = (char*)malloc(MAX_WORD_LENGHT*sizeof(char));
 	
 	// child take track of time
 	time_child = fork();
@@ -124,9 +123,9 @@ int init_curses()
 	}
 
 	start_color();
-	init_pair(RIGHT_WORD, COLOR_GREEN, COLOR_BLACK);
-	init_pair(WRONG_WORD, COLOR_RED, COLOR_BLACK);
-	init_pair(SELECT_WORD, COLOR_BLACK, COLOR_WHITE);
+	init_pair(COL_RIGHT_WORD, COLOR_GREEN, COLOR_BLACK);
+	init_pair(COL_WRONG_WORD, COLOR_RED, COLOR_BLACK);
+	init_pair(COL_SELECT_WORD, COLOR_BLACK, COLOR_WHITE);
 
 	x_offset = (COLS/2) - 30;
 	y_offset = 5;
@@ -135,7 +134,7 @@ int init_curses()
 
 int draw_gui()
 {
-	attron(COLOR_PAIR(SELECT_WORD));
+	attron(COLOR_PAIR(COL_SELECT_WORD));
 
 	// draw a white line
 	move(0,0);
@@ -147,7 +146,7 @@ int draw_gui()
 	mvprintw(0, (COLS/2) - 6, "Fast Fingers");
 	mvprintw(0, COLS - 14, "TAB to reset");
 
-	attroff(COLOR_PAIR(SELECT_WORD));
+	attroff(COLOR_PAIR(COL_SELECT_WORD));
 
 	return 1;
 }
@@ -183,12 +182,12 @@ void print_words_to_type()
 	size_t word_lenght = 0;
 	int i;
 
-	attroff(COLOR_PAIR(WRONG_WORD));
-	attroff(COLOR_PAIR(RIGHT_WORD));
+	attroff(COLOR_PAIR(COL_WRONG_WORD));
+	attroff(COLOR_PAIR(COL_RIGHT_WORD));
 
 	move(y_offset, 0);
 	clrtoeol();
-	for (i = N_WORD_PER_ROW * print_raw; i < N_WORD_PER_ROW + N_WORD_PER_ROW * print_raw; i++) {
+	for (i = MAX_WORDS_PER_ROW * print_raw; i < MAX_WORDS_PER_ROW + MAX_WORDS_PER_ROW * print_raw; i++) {
 		/* mvprintw(y_offset, x_offset + word_lenght, words[i]); */
 		mvaddstr(y_offset, x_offset + word_lenght, words[i]);
 		word_lenght += string_len(words[i]) + 1;
@@ -200,7 +199,7 @@ void print_words_to_type()
 	move(y_offset + 1, 0);
 	clrtoeol();
 
-	for (i = N_WORD_PER_ROW * print_raw; i < N_WORD_PER_ROW * (1 + print_raw); i++) {
+	for (i = MAX_WORDS_PER_ROW * print_raw; i < MAX_WORDS_PER_ROW * (1 + print_raw); i++) {
 		/* mvprintw(y_offset + 1, x_offset + word_lenght, words[i]); */
 		mvaddstr(y_offset + 1, x_offset + word_lenght, words[i]);
 		word_lenght += string_len(words[i]) + 1;
@@ -209,12 +208,12 @@ void print_words_to_type()
 
 #define SWAP(x, y) do { typeof(x) temp = x; x = y; y = temp; } while (0)
 
-int shuffle()
+int shuffle(char *array[], int len)
 {
 	srand((unsigned) time(NULL));
 
 	for (int i = 0; i < 500; i++) 
-		SWAP(words[rand() % 255], words[rand() % 255]);
+		SWAP(array[rand() % (len -1)], array[rand() % (len -1)]);
 
 	return 1;
 }
@@ -225,7 +224,7 @@ int feed_words_into_array()
 	words_file = fopen("words.txt", "r");
 
 	int i = 0;
-	char *buffer = (char*)malloc(WORD_LENGHT*sizeof(char));
+	char *buffer = (char*)malloc(MAX_WORD_LENGHT*sizeof(char));
 
 	srand((unsigned) time(NULL));
 
@@ -237,7 +236,8 @@ int feed_words_into_array()
 	free(buffer);
 	fclose(words_file);
 
-	shuffle();
+	// shuffle the elemets in the array
+	shuffle(words, MAX_WORDS);
 
 	return 1;
 }
@@ -260,16 +260,16 @@ int typing_round()
 	size_t word_lenght = 0;
 
 	char *word_to_type;
-	user_word = (char*)malloc(WORD_LENGHT*sizeof(char));
-	word_to_type = (char*)malloc(WORD_LENGHT*sizeof(char));
+	user_word = (char*)malloc(MAX_WORD_LENGHT*sizeof(char));
+	word_to_type = (char*)malloc(MAX_WORD_LENGHT*sizeof(char));
 
 	// copy the first word to type
 	strcpy(word_to_type, words[index_word_to_type]);
 
 	// select the first word to type
-	attron(COLOR_PAIR(SELECT_WORD));
+	attron(COLOR_PAIR(COL_SELECT_WORD));
 	mvprintw(y_offset, x_offset, word_to_type);
-	attroff(COLOR_PAIR(SELECT_WORD));
+	attroff(COLOR_PAIR(COL_SELECT_WORD));
 
 	// reset the round variables
 	playing_round 	= 0;
@@ -337,7 +337,7 @@ int typing_round()
 
 				// update the word to be typed
 				index_word_to_type++;
-				if (index_word_to_type == (N_WORD_PER_ROW * print_raw))
+				if (index_word_to_type == (MAX_WORDS_PER_ROW * print_raw))
 				{
 					print_words_to_type();
 					word_lenght = 0;
@@ -351,27 +351,27 @@ int typing_round()
 					if (word_typed_right(user_word, word_to_type))
 					{
 						correct_typed_words++;
-						attron(COLOR_PAIR(RIGHT_WORD));
+						attron(COLOR_PAIR(COL_RIGHT_WORD));
 
 					} else
 					{
 						incorrect_typed_words++;
-						attron(COLOR_PAIR(WRONG_WORD));
+						attron(COLOR_PAIR(COL_WRONG_WORD));
 					}
 
 					// mark as correct or wrong the current typed word
 					mvprintw(y_offset, x_offset + word_lenght, word_to_type);
-					attroff(COLOR_PAIR(WRONG_WORD));
-					attroff(COLOR_PAIR(RIGHT_WORD));
+					attroff(COLOR_PAIR(COL_WRONG_WORD));
+					attroff(COLOR_PAIR(COL_RIGHT_WORD));
 
 					word_lenght += string_len(word_to_type) + 1;
 				}
 				strcpy(word_to_type, words[index_word_to_type]);
 
 				// select next word to be typed
-				attron(COLOR_PAIR(SELECT_WORD));
+				attron(COLOR_PAIR(COL_SELECT_WORD));
 				mvprintw(y_offset, x_offset + word_lenght, word_to_type);
-				attroff(COLOR_PAIR(SELECT_WORD));
+				attroff(COLOR_PAIR(COL_SELECT_WORD));
 
 				// reset the cursor and user word
 				move(y_offset + 3, (COLS/2) - 5);
@@ -446,11 +446,11 @@ int typing_round()
 			if( typing_word_correctly(user_word - n_ch, word_to_type) )
 			{
 				correct_keystroke++;
-				attron(COLOR_PAIR(RIGHT_WORD));
+				attron(COLOR_PAIR(COL_RIGHT_WORD));
 			}
 			else
 			{
-				attron(COLOR_PAIR(WRONG_WORD));
+				attron(COLOR_PAIR(COL_WRONG_WORD));
 				incorrect_keystroke++;
 			}
 
@@ -488,15 +488,15 @@ int typing_round()
 	return 1;
 }
 
-int view_score()
+int view_score(int c_ks, int i_ks, int c_w, int i_w)
 {
 	clear();
 	draw_gui();
 	
 	// disable color text
-	attroff(COLOR_PAIR(WRONG_WORD));
-	attroff(COLOR_PAIR(RIGHT_WORD));
-	attroff(COLOR_PAIR(SELECT_WORD));
+	attroff(COLOR_PAIR(COL_WRONG_WORD));
+	attroff(COLOR_PAIR(COL_RIGHT_WORD));
+	attroff(COLOR_PAIR(COL_SELECT_WORD));
 
 	// print the WPM
 	// WPM is calculated with this formula
@@ -508,15 +508,15 @@ int view_score()
 	// print keystrokes
 	mvprintw(y_offset + 1, (COLS/2) - 10, "Keystrokes: %d (", correct_keystroke + incorrect_keystroke);
 
-	attron(COLOR_PAIR(RIGHT_WORD));
+	attron(COLOR_PAIR(COL_RIGHT_WORD));
 	printw("%d", correct_keystroke);
-	attroff(COLOR_PAIR(RIGHT_WORD));
+	attroff(COLOR_PAIR(COL_RIGHT_WORD));
 
 	printw("|");
 
-	attron(COLOR_PAIR(WRONG_WORD));
+	attron(COLOR_PAIR(COL_WRONG_WORD));
 	printw("%d", incorrect_keystroke);
-	attroff(COLOR_PAIR(WRONG_WORD));
+	attroff(COLOR_PAIR(COL_WRONG_WORD));
 	printw(")");
 
 	// print number of correct and incorrect words
@@ -545,9 +545,9 @@ int view_score()
 void second_elapsed()
 {
 	// disabling all coloring fancy
-	attroff(COLOR_PAIR(WRONG_WORD));
-	attroff(COLOR_PAIR(RIGHT_WORD));
-	attroff(COLOR_PAIR(SELECT_WORD));
+	attroff(COLOR_PAIR(COL_WRONG_WORD));
+	attroff(COLOR_PAIR(COL_RIGHT_WORD));
+	attroff(COLOR_PAIR(COL_SELECT_WORD));
 
 	// decrease the time only if the user is playing
 	attron(A_BOLD);
