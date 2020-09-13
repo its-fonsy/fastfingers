@@ -1,15 +1,14 @@
 #include <ncurses.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <signal.h>
 #include <locale.h>
 #include <unistd.h>
 #include <time.h>
 
-#define MAX_WORDS_PER_ROW 7
-#define MAX_WORDS 255
-#define MAX_WORD_LENGHT 16
+#include "util.h"
 
+#define MAX_WORDS_PER_ROW 7
 #define KEY_ESC 27
 
 // color stuff
@@ -29,7 +28,7 @@ void second_elapsed();
 
 int init_curses();
 int draw_gui();
-int feed_words_into_array();
+int feed_words_into_array(char* filename, char* array[]);
 void print_words_to_type();
 int typing_round();
 int view_score();
@@ -75,7 +74,7 @@ int main(int argc, char *argv[])
 		draw_gui();
 
 		// populate the array with words from a file
-		feed_words_into_array();
+		feed_words_into_array("words.txt", words);
 		print_words_to_type();
 
 		// type some words
@@ -151,31 +150,6 @@ int draw_gui()
 	return 1;
 }
 
-int typing_word_correctly(char *user, char *word_to_type)
-{
-	for( ; *user != '\0' ; user++, word_to_type++ )
-		if (*user != *word_to_type)
-			return 0;
-	return 1;
-}
-
-int word_typed_right(char *user, char *word_to_type)
-{
-	for( ; *user == *word_to_type ; user++, word_to_type++ )
-		if (*user == '\0')
-			return 1;
-	return 0;
-}
-
-int string_len(char *s)
-{
-	int i = 0;
-	for(; *s != '\0'; s++, i++)
-		if(*s == -61)
-			i--;
-	return i;
-}
-
 uint8_t print_raw = 0;
 void print_words_to_type()
 {
@@ -204,42 +178,6 @@ void print_words_to_type()
 		mvaddstr(y_offset + 1, x_offset + word_lenght, words[i]);
 		word_lenght += string_len(words[i]) + 1;
 	}
-}
-
-#define SWAP(x, y) do { typeof(x) temp = x; x = y; y = temp; } while (0)
-
-int shuffle(char *array[], int len)
-{
-	srand((unsigned) time(NULL));
-
-	for (int i = 0; i < 500; i++) 
-		SWAP(array[rand() % (len -1)], array[rand() % (len -1)]);
-
-	return 1;
-}
-
-int feed_words_into_array()
-{
-	FILE *words_file;
-	words_file = fopen("words.txt", "r");
-
-	int i = 0;
-	char *buffer = (char*)malloc(MAX_WORD_LENGHT*sizeof(char));
-
-	srand((unsigned) time(NULL));
-
-	// 1/3 of probabilty that the word will be added to the array
-	while ((fscanf(words_file, "%s", buffer) != EOF) && i < MAX_WORDS )
-		if (rand() % 4 == 1)
-			strcpy(words[i++], buffer);
-	
-	free(buffer);
-	fclose(words_file);
-
-	// shuffle the elemets in the array
-	shuffle(words, MAX_WORDS);
-
-	return 1;
 }
 
 int n_ch = 0, playing_round = 0, playing_time = DEFAULT_ROUND_TIME;
