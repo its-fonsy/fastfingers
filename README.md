@@ -16,8 +16,9 @@ then play!
 
 ## Language
 
-Currently the only supported language is italian.
-Other language will be supported in the future.
+The supported language are in `lang/` folder. To change language run
+
+	fastfingers -l english
 
 ## Commands
 
