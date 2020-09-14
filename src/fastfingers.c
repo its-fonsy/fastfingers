@@ -20,7 +20,8 @@ void second_elapsed();
 int main(int argc, char *argv[])
 {
 	int ch;
-	if( argc == 2 )
+	char language[15] = "lang/";
+	if( argc > 2 )
 	{
 		ch = *++argv[1];
 		switch(ch)
@@ -31,10 +32,15 @@ int main(int argc, char *argv[])
 				printf("Practice your touch typing in your terminal\n\n");
 				printf("OPTION\n");
 				printf("  -h\t\tPrint this help message\n");
+				return 0;
+				break;
+			case 'l':
+				strcat(language, argv[2]);
 				break;
 		}
-		return 0;
 	}
+	else
+		strcat(language, "italian");
 
 	int time_child;
 	struct score user_score;
@@ -61,7 +67,7 @@ int main(int argc, char *argv[])
 		draw_gui();
 
 		// populate the array with words from a file
-		feed_words_into_array("italian.txt", words);
+		feed_words_into_array(language, words);
 		print_words_to_type(0, words);
 
 		// type some words

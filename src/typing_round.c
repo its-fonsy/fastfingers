@@ -6,7 +6,7 @@
 #include "util.h"
 
 #define KEY_ESC 27
-#define DEFAULT_ROUND_TIME 5 
+#define DEFAULT_ROUND_TIME 59
 
 /* playing_round has 3 state:			*/
 /* 	  0 new game wait to start	 		*/
