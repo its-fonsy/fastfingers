@@ -57,29 +57,16 @@ int main(int argc, char *argv[])
 	// start the game
 	while(1)
 	{
+		clear();
 		draw_gui();
 
 		// populate the array with words from a file
-		feed_words_into_array("words.txt", words);
+		feed_words_into_array("italian.txt", words);
 		print_words_to_type(0, words);
 
 		// type some words
 		if( typing_round(words, &user_score) )
-		{
-			// disable cursor
-			curs_set(0);
-
-			// view the score of a round
 			view_score(user_score);
-
-			// CTRL+C to exit
-			// TAB to play again
-			while((ch = getch()))
-				if(ch == '	')
-					break;
-		}
-		clear();
-		curs_set(1);
 	}
 	
 	endwin();

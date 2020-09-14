@@ -87,7 +87,13 @@ void print_words_to_type(int print_raw, char *array[])
 
 int view_score(struct score round)
 {
+	// disable cursor
+	curs_set(0);
+
+	// clear the screen
 	clear();
+
+	// redraw the GUI
 	draw_gui();
 	
 	// disable color text
@@ -135,6 +141,15 @@ int view_score(struct score round)
 	printw("TAB");
 	attroff(A_BOLD);
 	printw(" to play again");
+
+	// CTRL+C to exit
+	// TAB to play again
+	int ch;
+	while((ch = getch()))
+		if(ch == '	')
+			break;
+
+	curs_set(1);
 
 	return 1;
 }
