@@ -1,6 +1,8 @@
-A clone for the Linux terminal of the game [10fastfingers](https://10fastfingers.com/) written in C.
 
-# Compile
+A clone for the Linux terminal of the game [10fastfingers](https://10fastfingers.com/) written in C.
+![gif](gameplay.gif)
+
+## Compile
 
 Copy the repo and compile the code
 
@@ -12,12 +14,12 @@ then play!
 
 	./fastfingers
 
-# Language
+## Language
 
 Currently the only supported language is italian.
 Other language will be supported in the future.
 
-# Commands
+## Commands
 
 - exit with <kbd>CTRL+C</kbd>
 - restart or play again with <kbd>TAB</kbd>
