@@ -53,13 +53,17 @@ int feed_words_into_array(char* filename, char* array[])
 	return 1;
 }
 
-#define SWAP(x, y) do { typeof(x) temp = x; x = y; y = temp; } while (0)
 int shuffle(char *array[], int len)
 {
+	int indx1, indx2;
+	char *dummy;
 	srand((unsigned) time(NULL));
 
-	for (int i = 0; i < 500; i++) 
-		SWAP(array[rand() % (len -1)], array[rand() % (len -1)]);
-
-	return 1;
+	for (int i = 0; i < 500; i++){ 
+		indx1 = rand() % len;
+		dummy = array[indx1];
+		indx2 = rand() % len;
+		array[indx1] = array[indx2];
+		array[indx2] = dummy;
+	}
 }
