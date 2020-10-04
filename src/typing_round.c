@@ -74,6 +74,22 @@ int typing_round(char* array_words[], struct score* user_score)
 	{
 		switch (ch)
 		{
+			case 8: // CTRL+BACKSPACE
+				// delete the word
+				move(y_offset + 3, 0);
+				clrtoeol();
+				move(y_offset + 3, (COLS/2) - 5);
+
+				for(;n_ch > 0; n_ch--)
+				{
+					user_word--;
+					if(*user_word != -61)
+						user_score->incorrect_keystrokes--;
+				}
+
+				*user_word = '\0';
+				break;
+					
 			case KEY_BACKSPACE:
 				if(n_ch > 0)
 				{
