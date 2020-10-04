@@ -37,9 +37,9 @@ int typing_round(char* array_words[], struct score* user_score)
 	strcpy(word_to_type, array_words[index_word_to_type]);
 
 	// select the first word to type
-	attron(COLOR_PAIR(COL_SELECT_WORD));
+	attron(A_BOLD);
 	mvprintw(y_offset, x_offset, word_to_type);
-	attroff(COLOR_PAIR(COL_SELECT_WORD));
+	attroff(A_BOLD);
 
 	// reset the round variables
 	playing_round 	= 0;
@@ -135,9 +135,9 @@ int typing_round(char* array_words[], struct score* user_score)
 				strcpy(word_to_type, array_words[index_word_to_type]);
 
 				// select next word to be typed
-				attron(COLOR_PAIR(COL_SELECT_WORD));
+				attron(A_BOLD);
 				mvprintw(y_offset, x_offset + word_lenght, word_to_type);
-				attroff(COLOR_PAIR(COL_SELECT_WORD));
+				attroff(A_BOLD);
 
 				// reset the cursor and user word
 				move(y_offset + 3, (COLS/2) - 5);
@@ -212,7 +212,7 @@ int typing_round(char* array_words[], struct score* user_score)
 			if( typing_word_correctly(user_word - n_ch, word_to_type) )
 			{
 				user_score->correct_keystrokes++;
-				attron(COLOR_PAIR(COL_RIGHT_WORD));
+				attroff(COLOR_PAIR(COL_WRONG_WORD));
 			}
 			else
 			{
