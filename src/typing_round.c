@@ -181,7 +181,7 @@ int typing_round(char* array_words[], struct score* user_score)
 		}
 
 		// keypress is alphabetical character
-		if ( ((ch >=97)   && (ch <= 122))||	// a to z
+		if ( ((ch >=65)   && (ch <= 122))||	// a to z
 			  (ch == 160) || (ch == 168) ||	// à and è
 			  (ch == 172) || (ch == 178) ||	// ì and ò
 		 	  (ch == 185)             	  )	// ù
