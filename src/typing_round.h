@@ -7,5 +7,6 @@ extern int playing_time;
 extern char *user_word;
 
 int typing_round(char* words[], struct score *user_score);
+int reset_score(struct score* user_score);
 
 #endif

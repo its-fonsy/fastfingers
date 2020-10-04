@@ -16,6 +16,16 @@
 int n_ch = 0, playing_round = 0, playing_time = DEFAULT_ROUND_TIME;
 char *user_word;
 
+
+int reset_score(struct score* user_score)
+{
+	user_score->correct_typed_words 	= 0;
+	user_score->correct_keystrokes		= 0;
+	user_score->incorrect_typed_words	= 0;
+	user_score->incorrect_keystrokes	= 0;
+	return 1;
+}
+
 int typing_round(char* array_words[], struct score* user_score)
 {
 
@@ -24,10 +34,7 @@ int typing_round(char* array_words[], struct score* user_score)
 	size_t word_lenght = 0;
 
 	// reset the score
-	user_score->correct_typed_words 	= 0;
-	user_score->correct_keystrokes		= 0;
-	user_score->incorrect_typed_words	= 0;
-	user_score->incorrect_keystrokes	= 0;
+	reset_score(user_score);
 
 	char *word_to_type;
 	user_word = (char*)malloc(MAX_WORD_LENGHT*sizeof(char));
