@@ -37,7 +37,7 @@ int init_curses()
 	return 1;
 }
 
-int draw_gui()
+int draw_gui(int n_games)
 {
 	attron(COLOR_PAIR(COL_SELECT_WORD));
 
@@ -50,6 +50,7 @@ int draw_gui()
 	mvprintw(0, 2, "CTRL+C to exit");
 	mvprintw(0, (COLS/2) - 6, "Fast Fingers");
 	mvprintw(0, COLS - 14, "TAB to reset");
+	mvprintw(y_offset+5, 5, "Round: %d", n_games);
 
 	attroff(COLOR_PAIR(COL_SELECT_WORD));
 
@@ -92,9 +93,6 @@ int view_score(struct score round)
 
 	// clear the screen
 	clear();
-
-	// redraw the GUI
-	draw_gui();
 	
 	// disable color text
 	attroff(COLOR_PAIR(COL_WRONG_WORD));

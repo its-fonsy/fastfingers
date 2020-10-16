@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 	else
 		strcat(language, "italian");
 
-	int time_child;
+	int time_child, n_game = 1;
 	struct score user_score;
 
 	// gui init
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 	while(1)
 	{
 		clear();
-		draw_gui();
+		draw_gui(n_game++);
 
 		// populate the array with words from a file
 		feed_words_into_array(language, words);

@@ -19,7 +19,7 @@ extern int x_offset;
 extern int y_offset;
 
 int init_curses();
-int draw_gui();
+int draw_gui(int n_games);
 void print_words_to_type(int print_raw, char *array[]);
 int view_score(struct score round);
 
