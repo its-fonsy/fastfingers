@@ -39,7 +39,7 @@ int feed_words_into_array(char* filename, char* array[])
 
 	srand((unsigned) time(NULL));
 
-	// 1/3 of probabilty that the word will be added to the array
+	// 1/4 of probabilty that the word will be added to the array
 	while ((fscanf(words_file, "%s", buffer) != EOF) && i < MAX_WORDS )
 		if (rand() % 4 == 1)
 			strcpy(array[i++], buffer);
