@@ -50,9 +50,9 @@ int draw_gui(int n_games)
 	mvprintw(0, 2, "CTRL+C to exit");
 	mvprintw(0, (COLS/2) - 6, "Fast Fingers");
 	mvprintw(0, COLS - 14, "TAB to reset");
-	mvprintw(y_offset+5, 5, "Round: %d", n_games);
 
 	attroff(COLOR_PAIR(COL_SELECT_WORD));
+	mvprintw(y_offset - 3, 2, "Round: %d", n_games);
 
 	return 1;
 }
